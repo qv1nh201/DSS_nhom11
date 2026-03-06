@@ -50,11 +50,24 @@ def predict():
             return jsonify({"error": f"Độ nhất quán AHP không đạt (CR={round(cr,4)}). Vui lòng đánh giá lại!"}), 400
 
         # --- BƯỚC 2: XỬ LÝ AI (DECISION TREE) ---
-        # Lấy dữ liệu tài chính (phải đủ 19 trường như lúc train) [cite: 231, 239]
-        financial_input = np.array(data['financial_data']).reshape(1, -1)
+        # 1. Lấy mảng 5 con số từ UI gửi lên (Term, NoEmp, GrAppv, Disbursement, RealEstate)
+        web_data = data['financial_data']
         
-        # Dự báo nhãn rủi ro [cite: 241, 263]
-        prediction = model.predict(financial_input)[0]
+        # 2. Trích xuất danh sách tên cột gốc mà AI đã học từ file CSV
+        feature_names = model.feature_names_in_
+        
+        # 3. Tạo một bảng dữ liệu (DataFrame) có 1 dòng, chứa đủ các cột (mặc định là 0)
+        input_df = pd.DataFrame(np.zeros((1, len(feature_names))), columns=feature_names)
+        
+        # 4. Lắp 5 con số từ Web vào đúng tên cột tương ứng
+        input_df.at[0, 'Term'] = web_data[0]
+        input_df.at[0, 'NoEmp'] = web_data[1]
+        input_df.at[0, 'GrAppv'] = web_data[2]
+        input_df.at[0, 'DisbursementGross'] = web_data[3]
+        input_df.at[0, 'RealEstate'] = web_data[4]
+        
+        # 5. Đưa bảng dữ liệu đã chuẩn hóa vào AI dự báo
+        prediction = model.predict(input_df)[0]
         ai_status = "An toàn" if prediction == 0 else "Rủi ro"
 
         # --- BƯỚC 3: TỔNG HỢP QUYẾT ĐỊNH [cite: 200, 265] ---

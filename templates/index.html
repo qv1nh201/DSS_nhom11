@@ -40,25 +40,25 @@
                 <div class="col-md-3">
                     <div class="card stat-card p-3 shadow-sm border-start border-primary border-4">
                         <small class="text-muted">Tổng hồ sơ</small>
-                        <h2 class="fw-bold">128</h2>
+                        <h2 id="txtTotal" class="fw-bold">0</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card stat-card p-3 shadow-sm border-start border-success border-4">
                         <small class="text-muted">Đã duyệt (Approve)</small>
-                        <h2 class="fw-bold text-success">84</h2>
+                        <h2 id="txtApproved" class="fw-bold text-success">0</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card stat-card p-3 shadow-sm border-start border-danger border-4">
                         <small class="text-muted">Từ chối (Reject)</small>
-                        <h2 class="fw-bold text-danger">32</h2>
+                        <h2 id="txtRejected" class="fw-bold text-danger">0</h2>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card stat-card p-3 shadow-sm border-start border-warning border-4">
                         <small class="text-muted">Đang xem xét</small>
-                        <h2 class="fw-bold text-warning">12</h2>
+                        <h2 id="txtPending" class="fw-bold text-warning">0</h2>
                     </div>
                 </div>
             </div>
@@ -73,7 +73,7 @@
 
                 <div class="col-md-8 mb-4">
                     <div class="table-container shadow-sm">
-                        <h6 class="mb-3">Hồ sơ thẩm định gần đây</h6>
+                        <h6 class="mb-3">Hồ sơ thẩm định gần đây (Từ Database)</h6>
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr class="small text-muted">
@@ -84,18 +84,7 @@
                                 </tr>
                             </thead>
                             <tbody id="loanTableBody">
-                                <tr>
-                                    <td>Simplex Office</td>
-                                    <td>8.5</td>
-                                    <td><span class="status-badge bg-success-subtle text-success">An toàn</span></td>
-                                    <td class="fw-bold text-primary">Duyệt vay</td>
-                                </tr>
-                                <tr>
-                                    <td>Dream Home</td>
-                                    <td>6.2</td>
-                                    <td><span class="status-badge bg-danger-subtle text-danger">Rủi ro</span></td>
-                                    <td class="fw-bold text-danger">Từ chối</td>
-                                </tr>
+                                <tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -106,20 +95,67 @@
 </div>
 
 <script>
-    // Khởi tạo biểu đồ tròn [cite: 254]
-    const ctx = document.getElementById('statusChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Duyệt', 'Từ chối', 'Xem xét'],
-            datasets: [{
-                data: [84, 32, 12],
-                backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
-                borderWidth: 0
-            }]
-        },
-        options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-    });
+    let myChart = null; // Biến lưu biểu đồ
+
+    // Hàm tự động chạy khi mở trang
+    window.onload = async function() {
+        try {
+            // 1. Gọi API lấy dữ liệu từ Python
+            const response = await fetch('/api/dashboard');
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error("Lỗi:", data.error);
+                return;
+            }
+
+            // 2. Cập nhật 4 con số thống kê
+            document.getElementById('txtTotal').innerText = data.total;
+            document.getElementById('txtApproved').innerText = data.approved;
+            document.getElementById('txtRejected').innerText = data.rejected;
+            document.getElementById('txtPending').innerText = data.pending;
+
+            // 3. Cập nhật Biểu đồ tròn
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Duyệt', 'Từ chối', 'Xem xét'],
+                    datasets: [{
+                        data: [data.approved, data.rejected, data.pending],
+                        backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 4. Cập nhật Bảng danh sách 5 hồ sơ mới nhất
+            const tbody = document.getElementById('loanTableBody');
+            tbody.innerHTML = ''; // Xóa chữ "Đang tải dữ liệu..."
+            
+            if (data.recent.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Chưa có hồ sơ nào trong Cơ sở dữ liệu</td></tr>';
+            } else {
+                data.recent.forEach(loan => {
+                    // Chỉnh màu chữ dựa trên kết quả
+                    let aiBadge = loan.ai_status === 'An toàn' ? '<span class="status-badge bg-success-subtle text-success">An toàn</span>' : '<span class="status-badge bg-danger-subtle text-danger">Rủi ro</span>';
+                    let recStyle = loan.recommendation === 'Duyệt vay' ? 'text-primary fw-bold' : (loan.recommendation.includes('Từ chối') ? 'text-danger fw-bold' : 'text-warning fw-bold');
+                    
+                    let row = `<tr>
+                        <td>${loan.startup}</td>
+                        <td>${loan.score}</td>
+                        <td>${aiBadge}</td>
+                        <td class="${recStyle}">${loan.recommendation}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        } catch (error) {
+            console.error("Lỗi kết nối:", error);
+            document.getElementById('loanTableBody').innerHTML = '<tr><td colspan="4" class="text-center text-danger">Không thể kết nối đến Database</td></tr>';
+        }
+    };
 </script>
 </body>
 </html>

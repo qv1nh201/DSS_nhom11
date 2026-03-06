@@ -41,6 +41,17 @@ def predict():
         data = request.json
         
         # --- BƯỚC 1: XỬ LÝ AHP ---
+        matrix = np.array(data['ahp_matrix'], dtype=float)
+        
+        # CHẶN LỖI: Kiểm tra xem có số 0 hoặc giá trị rỗng (NaN/Inf) trong ma trận không
+        if not np.all(matrix > 0) or np.isnan(matrix).any() or np.isinf(matrix).any():
+            return jsonify({
+                "error": "Dữ liệu ma trận AHP không hợp lệ (có chứa số 0 hoặc để trống). Vui lòng nhập thang điểm 1-9!"
+            }), 400
+
+        weights, cr = calculate_ahp(matrix)
+        # ... (các đoạn code bên dưới giữ nguyên) ...
+        # --- BƯỚC 1: XỬ LÝ AHP ---
         # Nhận ma trận so sánh cặp từ UI [cite: 245]
         matrix = np.array(data['ahp_matrix']) 
         weights, cr = calculate_ahp(matrix)

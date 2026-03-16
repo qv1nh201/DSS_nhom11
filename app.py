@@ -3,30 +3,53 @@ import pickle
 import numpy as np
 import pandas as pd
 import pyodbc
+import json
+import os
 
 app = Flask(__name__)
 
 # ==========================================
-# 1. KHỞI TẠO MÔ HÌNH AI & CẤU HÌNH TRỌNG SỐ AHP
+# 0. CẤU HÌNH KẾT NỐI CSDL DÙNG CHUNG (FIX LỖI NOT DEFINED)
+# ==========================================
+# Thay đổi 'localhost' thành tên Server của bạn nếu cần (VD: r'localhost\SQLEXPRESS')
+CONNECTION_STRING = (
+    r'DRIVER={ODBC Driver 17 for SQL Server};'
+    r'SERVER=localhost;' 
+    r'DATABASE=DSS_Startup;'
+    r'Trusted_Connection=yes;'
+)
+
+CONFIG_FILE = 'ahp_config.json'
+
+# ==========================================
+# 1. KHỞI TẠO MÔ HÌNH AI & CẤU HÌNH AHP
 # ==========================================
 try:
     model = pickle.load(open('loan_model.pkl', 'rb'))
 except FileNotFoundError:
-    print("Lỗi: Không tìm thấy file loan_model.pkl. Hãy chạy file train_model.py trước.")
+    print("Lỗi: Không tìm thấy file loan_model.pkl.")
 
-# Lấy trực tiếp kết quả CR=0.027 từ file Excel "MA TRẬN SO SÁNH CẶP.csv" của nhóm
-# Thứ tự: [Tài chính, Uy tín, Khả thi, Founder]
-CRITERIA_WEIGHTS = np.array([0.5378, 0.2745, 0.1285, 0.0591])
-
-# Quy ước điểm số cho các mức đánh giá định tính (AHP Tuyệt đối)
+# Trọng số mức độ đánh giá (Absolute AHP)
 INTENSITY_SCORES = {
-    "Tốt": 1.0,
-    "Khá": 0.5,
-    "Kém": 0.1
+    "Tốt": 0.633,
+    "Khá": 0.260,
+    "Kém": 0.106
 }
 
+def load_ahp_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {
+        "weights": [0.5378, 0.2745, 0.1285, 0.0591],
+        "labels": ["Sức khỏe tài chính", "Uy tín tín dụng", "Tính khả thi dự án", "Năng lực Founder"]
+    }
+
+# Khởi tạo trọng số hệ thống
+ahp_data = load_ahp_config()
+CRITERIA_WEIGHTS = np.array(ahp_data["weights"])
+
 def calculate_ahp(matrix):
-    """Hàm này giữ lại chỉ để dùng cho API /api/ahp_weights (Vẽ biểu đồ Admin)"""
     column_sums = np.sum(matrix, axis=0)
     norm_matrix = matrix / column_sums
     weights = np.mean(norm_matrix, axis=1)
@@ -38,7 +61,7 @@ def calculate_ahp(matrix):
     return weights, cr
 
 # ==========================================
-# 2. CÁC API RENDER GIAO DIỆN & DASHBOARD (Giữ nguyên)
+# 2. CÁC ROUTE GIAO DIỆN
 # ==========================================
 @app.route('/')
 def index():
@@ -48,197 +71,163 @@ def index():
 def assessment():
     return render_template('assessment.html')
 
-CRITERIA_WEIGHTS = np.array([0.5378, 0.2745, 0.1285, 0.0591])
+@app.route('/history')
+def history():
+    return render_template('history.html')
 
-@app.route('/api/ahp_weights', methods=['POST'])
+# ==========================================
+# 3. CÁC API XỬ LÝ DỮ LIỆU
+# ==========================================
+
+@app.route('/api/ahp_weights', methods=['GET', 'POST'])
 def api_ahp_weights():
-    # Thêm dòng này để báo cho Python biết là mình muốn sửa biến hệ thống
-    global CRITERIA_WEIGHTS 
+    global CRITERIA_WEIGHTS
+    if request.method == 'GET':
+        return jsonify(load_ahp_config())
     
     try:
         data = request.json
         matrix = np.array(data['ahp_matrix'], dtype=float)
-        
-        if not np.all(matrix > 0) or np.isnan(matrix).any() or np.isinf(matrix).any():
-            return jsonify({"error": "Dữ liệu ma trận có chứa số 0."}), 400
-            
         weights, cr = calculate_ahp(matrix)
         
         if cr > 0.1:
             return jsonify({"error": f"CR={round(cr,4)} > 0.1"}), 400
 
-        # ---> ĐIỂM ĂN TIỀN LÀ ĐOẠN NÀY <---
-        # Nếu CR hợp lệ (<= 0.1), hệ thống sẽ cập nhật bộ trọng số mới
         CRITERIA_WEIGHTS = weights
-        print("Đã cập nhật trọng số hệ thống mới:", CRITERIA_WEIGHTS)
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump({"weights": weights.tolist()}, f)
 
         return jsonify({
             "weights": [round(w * 100, 2) for w in weights],
             "cr": round(cr, 4),
-            "labels": ["Sức khỏe tài chính", "Uy tín tín dụng", "Tính khả thi dự án", "Năng lực Founder"] 
+            "labels": ahp_data["labels"]
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/dashboard', methods=['GET'])
 def api_dashboard():
-    # LƯU Ý: Sửa lại SERVER=... nếu máy bạn dùng SQLEXPRESS như đã bàn ở trên nhé
-    conn_str = (
-        r'DRIVER={ODBC Driver 17 for SQL Server};'
-        r'SERVER=localhost;' # Thêm \SQLEXPRESS nếu cần
-        r'DATABASE=DSS_Startup;'
-        r'Trusted_Connection=yes;'
-    )
-    
     try:
-        conn = pyodbc.connect(conn_str)
+        conn = pyodbc.connect(CONNECTION_STRING)
         cursor = conn.cursor()
-        
-        # Đếm tổng hồ sơ
         cursor.execute("SELECT COUNT(*) FROM Loans")
         total = cursor.fetchone()[0]
-        
-        # Đếm hồ sơ duyệt
         cursor.execute("SELECT COUNT(*) FROM Loans WHERE Recommendation = N'Duyệt vay'")
         approved = cursor.fetchone()[0]
-        
-        # Đếm hồ sơ từ chối
         cursor.execute("SELECT COUNT(*) FROM Loans WHERE Recommendation LIKE N'Từ chối%'")
         rejected = cursor.fetchone()[0]
         
-        pending = total - approved - rejected 
-        
-        # Lấy 5 hồ sơ mới nhất để hiển thị ra bảng
         cursor.execute("SELECT TOP 5 ID, AHP_Score, AI_Status, Recommendation FROM Loans ORDER BY ID DESC")
-        rows = cursor.fetchall()
-        
-        recent_loans = []
-        for row in rows:
-            recent_loans.append({
-                "startup": f"Hồ sơ Startup #{row.ID}",
-                "score": row.AHP_Score,
-                "ai_status": row.AI_Status,
-                "recommendation": row.Recommendation
-            })
-            
+        recent = [{"startup": f"Startup #{r.ID}", "score": r.AHP_Score, "ai_status": r.AI_Status, "recommendation": r.Recommendation} for r in cursor.fetchall()]
         conn.close()
-        
-        # Flask yêu cầu bắt buộc phải return jsonify hoặc string
-        return jsonify({
-            "total": total, "approved": approved, "rejected": rejected,
-            "pending": pending, "recent": recent_loans
-        })
+        return jsonify({"total": total, "approved": approved, "rejected": rejected, "recent": recent})
     except Exception as e:
-        print("Lỗi Dashboard API:", e)
-        # Trả về lỗi định dạng JSON để JS không bị sập
         return jsonify({"error": str(e)}), 500
 
-# ==========================================
-# 3. API CỐT LÕI: THẨM ĐỊNH TỔNG HỢP (ĐÃ SỬA LUỒNG)
-# ==========================================
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    try:
+        conn = pyodbc.connect(CONNECTION_STRING)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Loans ORDER BY ID DESC")
+        columns = [column[0] for column in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        conn.close()
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/delete_loan/<int:id>', methods=['DELETE'])
+def delete_loan(id):
+    try:
+        conn = pyodbc.connect(CONNECTION_STRING)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Loans WHERE ID = ?", (id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.json
-        
-        # UI chỉ cần gửi 2 mảng: Dữ liệu tài chính (cho AI) và Dữ liệu định tính (cho AHP)
-        web_data = data['financial_data'] # [Term, NoEmp, GrAppv, Disbursement, RealEstate]
-        
-        # Mảng 3 giá trị định tính (Uy tín, Khả thi, Founder) được nhập từ form UI (Dạng: "Tốt", "Khá", "Kém")
+        web_data = data['financial_data'] 
         qualitative_data = data.get('qualitative_data', ["Khá", "Khá", "Khá"]) 
 
-        # --- BƯỚC 1: AI DỰ BÁO SỨC KHỎE TÀI CHÍNH ---
+        # --- 1. AI Predict ---
         feature_names = model.feature_names_in_
         input_df = pd.DataFrame(np.zeros((1, len(feature_names))), columns=feature_names)
-        
         input_df.at[0, 'Term'] = web_data[0]
         input_df.at[0, 'NoEmp'] = web_data[1]
         input_df.at[0, 'GrAppv'] = web_data[2]
         input_df.at[0, 'DisbursementGross'] = web_data[3]
         input_df.at[0, 'RealEstate'] = web_data[4]
         
-        # [Hack Demo]
-        if web_data[2] < 5000 or web_data[3] < 2000:
-            prediction = 1 
-        else:
-            prediction = model.predict(input_df)[0]
-            
+        prediction = 1 if (web_data[2] < 5000 or web_data[3] < 2000) else model.predict(input_df)[0]
         ai_status = "An toàn" if prediction == 0 else "Rủi ro"
 
-        # --- BƯỚC 2: CHUYỂN ĐỔI KẾT QUẢ AI VÀO MÔ HÌNH AHP ---
-        # Nếu AI báo an toàn -> Tài chính Mức Tốt (1.0). Nếu Rủi ro -> Mức Kém (0.1)
+        # --- 2. AHP Calculate ---
         financial_score = INTENSITY_SCORES["Tốt"] if prediction == 0 else INTENSITY_SCORES["Kém"]
-
-        # Gom điểm 4 tiêu chí: [Tài chính (từ AI), Uy tín (từ UI), Khả thi (từ UI), Founder (từ UI)]
         expert_scores = np.array([
-            financial_score,
-            INTENSITY_SCORES[qualitative_data[0]],
-            INTENSITY_SCORES[qualitative_data[1]],
+            financial_score, 
+            INTENSITY_SCORES[qualitative_data[0]], 
+            INTENSITY_SCORES[qualitative_data[1]], 
             INTENSITY_SCORES[qualitative_data[2]]
         ])
-
-        # --- BƯỚC 3: TÍNH TỔNG ĐIỂM AHP (AHP Tuyệt đối) ---
-        # Nhân ma trận trọng số (weights) với mức điểm cường độ (scores)
-        # Điểm thang 100 cho dễ nhìn
         final_score = np.dot(CRITERIA_WEIGHTS, expert_scores) * 100 
         
-        # Luồng Logic Đa Cấp
-        if ai_status == "Rủi ro" and final_score >= 65: # Điểm vớt cao do chuyên gia đánh giá team Founder tốt
+        # Luồng ra quyết định
+        if ai_status == "Rủi ro" and final_score >= 65: 
             recommendation = "Xem xét đặc biệt (Giám đốc duyệt)"
-        elif final_score >= 65 and ai_status == "An toàn":
+        elif final_score >= 65 and ai_status == "An toàn": 
             recommendation = "Duyệt vay"
-        elif ai_status == "Rủi ro":
+        elif ai_status == "Rủi ro": 
             recommendation = "Từ chối (Rủi ro tài chính cao)"
-        else:
+        else: 
             recommendation = "Từ chối (Điểm tiềm năng AHP quá thấp)"
 
-        # --- BƯỚC 4: LƯU VÀO SQL SERVER ---
-        # --- BƯỚC 4: LƯU VÀO SQL SERVER ---
-        # LƯU Ý: Server Name hiện tại là DESKTOP-QEOF2P9\SQLEXPRESS
-        conn_str = (
-            r'DRIVER={ODBC Driver 17 for SQL Server};'
-            r'SERVER=localhost;' 
-            r'DATABASE=DSS_Startup;'
-            r'Trusted_Connection=yes;'
-        )
+        # --- 3. TẠO VĂN BẢN GIẢI TRÌNH (XAI) ---
+        reasons = []
+        # Giải trình về AI
+        if ai_status == "Rủi ro":
+            reasons.append(f"- Sức khỏe tài chính: Hệ thống AI đánh giá có rủi ro cao (Trọng số ảnh hưởng: {round(CRITERIA_WEIGHTS[0]*100)}%).")
+        else:
+            reasons.append("- Sức khỏe tài chính: Chỉ số tài chính đạt ngưỡng an toàn.")
+
+        # Giải trình về các tiêu chí AHP
+        labels = ["Uy tín", "Khả thi", "Founder"]
+        for i in range(1, 4):
+            if expert_scores[i] <= 0.260: # Nếu chọn mức Khá hoặc Kém
+                reasons.append(f"- {labels[i-1]}: Đánh giá mức '{qualitative_data[i-1]}' làm giảm điểm tiềm năng.")
         
-        try:
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            
-            insert_query = '''
-                INSERT INTO Loans (Term, NoEmp, GrAppv, Disbursement, RealEstate, AHP_Score, AI_Status, Recommendation)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            '''
-            
-            cursor.execute(insert_query, (
-                web_data[0], web_data[1], web_data[2], web_data[3], web_data[4], 
-                float(final_score), ai_status, recommendation
-            ))
-            conn.commit()
-            conn.close()
-            print("Đã lưu hồ sơ thành công vào SQL Server!")
-            
-        except Exception as db_err:
-            print("Lỗi khi lưu vào Database:", db_err)
-            # Hệ thống vẫn chạy tiếp dù lỗi DB, không làm sập Web
+        explanation = " ".join(reasons)
 
-        # --- BƯỚC 5: TRẢ KẾT QUẢ CHO GIAO DIỆN ---
+        # --- 4. Lưu vào SQL Server (Thêm cột Explanation) ---
+        conn = pyodbc.connect(CONNECTION_STRING)
+        cursor = conn.cursor()
+        
+        # Đảm bảo bảng Loans đã có cột Explanation (NVARCHAR(MAX))
+        insert_query = """
+            INSERT INTO Loans (Term, NoEmp, GrAppv, Disbursement, RealEstate, AHP_Score, AI_Status, Recommendation, Explanation) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        cursor.execute(insert_query, (
+            web_data[0], web_data[1], web_data[2], web_data[3], web_data[4], 
+            float(final_score), ai_status, recommendation, explanation
+        ))
+        conn.commit()
+        conn.close()
+
         return jsonify({
-            "score": round(final_score, 2),
-            "ai_status": ai_status,
+            "score": round(final_score, 2), 
+            "ai_status": ai_status, 
             "recommendation": recommendation,
-            "ahp_breakdown": {
-                "tai_chinh": financial_score * CRITERIA_WEIGHTS[0] * 100,
-                "uy_tin": expert_scores[1] * CRITERIA_WEIGHTS[1] * 100,
-                "kha_thi": expert_scores[2] * CRITERIA_WEIGHTS[2] * 100,
-                "founder": expert_scores[3] * CRITERIA_WEIGHTS[3] * 100
-            }
+            "explanation": explanation # Trả về luôn để UI hiện ngay lập tức
         })
-
     except Exception as e:
-        import traceback
-        return jsonify({"error": f"Lỗi hệ thống lõi: {str(e)}", "trace": traceback.format_exc()}), 500
-
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)

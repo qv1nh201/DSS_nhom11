@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch sử thẩm định - DSS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand fw-bold">Quản lý hồ sơ thẩm định chi tiết</span>
+            <a href="/" class="btn btn-outline-light btn-sm">Quay lại Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã HS</th>
+                            <th>Dữ liệu tài chính (Term/Vốn)</th>
+                            <th>AI Dự báo</th>
+                            <th>Điểm AHP</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        </tbody>
+                </table>
+                <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Chi tiết hồ sơ thẩm định</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="btnExportInside">Xuất PDF ngay</button>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-template" style="display:none; padding: 50px; font-family: 'Times New Roman', serif; background-color: white;">
+        <div style="text-align: center;">
+            <h4 style="margin-bottom: 5px; font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h4>
+            <p style="text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</p>
+            <br>
+            <h2 style="color: #004a99; font-weight: bold;">BÁO CÁO KẾT QUẢ THẨM ĐỊNH TÍN DỤNG</h2>
+        </div>
+        
+        <hr style="border: 1px solid black;">
+        
+        <div style="margin-top: 20px; line-height: 1.8; font-size: 14pt;">
+            <p><strong>Mã hồ sơ:</strong> <span id="pdf-id"></span></p>
+            <p><strong>Dự báo rủi ro (AI):</strong> <span id="pdf-ai"></span></p>
+            <p><strong>Điểm tiềm năng (AHP):</strong> <span id="pdf-score"></span>/100</p>
+            <p><strong>QUYẾT ĐỊNH CỦA HỆ THỐNG:</strong> <strong style="text-transform: uppercase; color: #d9534f;" id="pdf-rec"></strong></p>
+            
+            <div style="margin-top: 20px; border: 1px solid #ccc; padding: 15px; background: #fdfdfd; border-radius: 5px;">
+                <p style="margin-bottom: 5px;"><strong>💡 Lý giải từ hệ thống (XAI):</strong></p>
+                <p id="pdf-explanation" style="font-style: italic; color: #555; font-size: 12pt;"></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 50px; text-align: right;">
+            <p><em>Ngày.... tháng.... năm 2026</em></p>
+            <p style="margin-right: 40px; font-weight: bold;">Cán bộ thẩm định</p>
+            <br><br><br>
+            <p style="margin-right: 30px;">(Ký và ghi rõ họ tên)</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadHistory() {
+            const res = await fetch('/api/history');
+            const loans = await res.json();
+            const tbody = document.getElementById('historyBody');
+            
+            tbody.innerHTML = loans.map(loan => `
+                <tr>
+                    <td><b>#${loan.ID}</b></td>
+                    <td>Tháng: ${loan.Term} | Vốn: $${loan.GrAppv}</td>
+                    <td><span class="badge ${loan.AI_Status === 'An toàn' ? 'bg-success' : 'bg-danger'}">${loan.AI_Status}</span></td>
+                    <td class="text-primary fw-bold">${loan.AHP_Score.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick='showPDF(${JSON.stringify(loan)})'>Xuất PDF</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteLoan(${loan.ID})">Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteLoan(id) {
+            if(confirm('Bạn có chắc chắn muốn xóa hồ sơ này khỏi hệ thống?')) {
+                const res = await fetch(`/api/delete_loan/${id}`, { method: 'DELETE' });
+                if(res.ok) loadHistory();
+            }
+        }
+
+        function showPDF(loan) {
+            // Điền thông tin vào mẫu PDF
+            document.getElementById('pdf-id').innerText = loan.ID;
+            document.getElementById('pdf-ai').innerText = loan.AI_Status;
+            document.getElementById('pdf-score').innerText = loan.AHP_Score.toFixed(2);
+            document.getElementById('pdf-rec').innerText = loan.Recommendation;
+            
+            // Lấy dữ liệu giải trình từ DB, nếu trống thì hiện câu mặc định
+            document.getElementById('pdf-explanation').innerText = loan.Explanation || "Chưa có dữ liệu giải trình cho hồ sơ này.";
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block';
+            
+            const opt = {
+                margin: 0.5,
+                filename: `Bao-cao-HS-${loan.ID}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.display = 'none';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thẩm định hồ sơ - DSS Startup</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary-color: #004a99; --secondary-color: #f8f9fa; }
         body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -13,7 +12,6 @@
         .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .card-header { background-color: white; border-bottom: 2px solid var(--primary-color); font-weight: bold; color: var(--primary-color); }
         .btn-primary { background-color: var(--primary-color); border: none; padding: 12px 30px; border-radius: 8px; }
-        .matrix-input { width: 60px; text-align: center; }
     </style>
 </head>
 <body>
@@ -21,15 +19,17 @@
 <nav class="navbar shadow-sm">
     <div class="container">
         <span class="navbar-brand mb-0 h1 text-white">Hệ hỗ trợ ra quyết định (DSS) - Thẩm định vay vốn</span>
+        <a href="/" class="btn btn-outline-light btn-sm">Quay lại Trang chủ</a>
     </div>
 </nav>
 
 <div class="container mb-5">
     <div class="row">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">1. Dữ liệu tài chính (AI - Decision Tree)</div>
+            <div class="card h-100">
+                <div class="card-header">1. Dữ liệu tài chính (AI tự động chấm điểm)</div>
                 <div class="card-body">
+                    <p class="text-muted small mb-3">Thông số này sẽ được đưa vào mô hình Decision Tree để dự báo rủi ro.</p>
                     <div class="row g-3">
                         <div class="col-6">
                             <label class="form-label">Thời hạn vay (tháng)</label>
@@ -60,132 +60,54 @@
         </div>
 
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">2. So sánh tiêu chí (AHP - Chuyên gia)</div>
+            <div class="card h-100">
+                <div class="card-header">2. Đánh giá chuyên gia (Dành cho Cán bộ tín dụng)</div>
                 <div class="card-body">
-                    <p class="text-muted small">So sánh mức độ quan trọng (Thang đo Saaty 1-9)</p>
-                    <table class="table table-sm text-center align-middle">
-                        <thead>
-                            <tr class="small">
-                                <th>Tiêu chí A</th>
-                                <th>Trọng số (1-9)</th>
-                                <th>Tiêu chí B</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Năng lực Founder</td>
-                                <td><input type="number" id="m12" class="form-control matrix-input mx-auto" value="1" oninput="if(this.value < 1) this.value = 1; if(this.value > 9) this.value = 9;"></td>
-                                <td>Ý tưởng SP</td>
-                            </tr>
-                            <tr>
-                                <td>Năng lực Founder</td>
-                                <td><input type="number" id="m13" class="form-control matrix-input mx-auto" value="1" oninput="if(this.value < 1) this.value = 1; if(this.value > 9) this.value = 9;"></td>
-                                <td>Thị trường</td>
-                            </tr>
-                            <tr>
-                                <td>Ý tưởng SP</td>
-                                <td><input type="number" id="m23" class="form-control matrix-input mx-auto" value="1" oninput="if(this.value < 1) this.value = 1; if(this.value > 9) this.value = 9;"></td>
-                                <td>Thị trường</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <button type="button" class="btn btn-warning w-100 fw-bold mt-2" onclick="xemTrongSoAHP()">
-                        📊 Tính & Xem Trọng Số AHP
-                    </button>
-
-                    <div id="chartArea" style="display: none; margin-top: 20px;">
-                        <h6 class="text-center text-primary">Biểu đồ Trọng số (CR = <span id="crValue"></span>)</h6>
-                        <div style="max-width: 250px; margin: auto;">
-                            <canvas id="ahpPieChart"></canvas>
-                        </div>
+                    <p class="text-muted small mb-3">Đánh giá các tiêu chí định tính của Startup. (Tiêu chí Tài chính đã do AI phụ trách).</p>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Uy tín tín dụng của nhóm trung lập</label>
+                        <select id="uy_tin" class="form-select border-primary">
+                            <option value="Tốt">Tốt (Lịch sử tín dụng sạch, uy tín cao)</option>
+                            <option value="Khá" selected>Khá (Không có nợ xấu, mức độ cơ bản)</option>
+                            <option value="Kém">Kém (Từng có nợ trễ hạn, rủi ro cao)</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">3. Chấm điểm tiềm năng (1-10)</div>
-                <div class="card-body">
-                    <div class="row g-2 text-center">
-                        <div class="col-4"><label class="small">Founder</label><input type="number" id="s1" class="form-control" value="7"></div>
-                        <div class="col-4"><label class="small">Ý tưởng</label><input type="number" id="s2" class="form-control" value="8"></div>
-                        <div class="col-4"><label class="small">Thị trường</label><input type="number" id="s3" class="form-control" value="6"></div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Tính khả thi của dự án</label>
+                        <select id="kha_thi" class="form-select border-primary">
+                            <option value="Tốt">Tốt (Kế hoạch kinh doanh xuất sắc, thị trường rộng)</option>
+                            <option value="Khá" selected>Khá (Kế hoạch ổn định, có tệp khách hàng)</option>
+                            <option value="Kém">Kém (Thiếu thực tế, khó cạnh tranh)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Năng lực của Founder / Core Team</label>
+                        <select id="founder" class="form-select border-primary">
+                            <option value="Tốt">Tốt (Nhiều kinh nghiệm, kỹ năng quản lý giỏi)</option>
+                            <option value="Khá" selected>Khá (Có chuyên môn nhưng thiếu kinh nghiệm quản lý)</option>
+                            <option value="Kém">Kém (Team non trẻ, thiếu cả chuyên môn lẫn quản lý)</option>
+                        </select>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="text-center mt-2 mb-5">
-        <button class="btn btn-primary shadow fw-bold fs-5 px-5" onclick="runAssessment()">
-            BẮT ĐẦU THẨM ĐỊNH HỆ THỐNG
-        </button>
+    <div class="row mt-4">
+        <div class="col-12 text-center mb-5">
+            <button class="btn btn-primary shadow fw-bold fs-5 px-5 py-3" onclick="runAssessment()" id="submitBtn">
+                BẮT ĐẦU THẨM ĐỊNH HỆ THỐNG DSS
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-// Hàm thu thập mảng AHP dùng chung cho cả 2 nút
-function getAHPMatrixData() {
-    const m12 = parseFloat(document.getElementById('m12').value);
-    const m13 = parseFloat(document.getElementById('m13').value);
-    const m23 = parseFloat(document.getElementById('m23').value);
-    return [
-        [1, m12, m13],
-        [1/m12, 1, m23],
-        [1/m13, 1/m23, 1]
-    ];
-}
-
-let ahpChartInstance = null; // Biến lưu trữ biểu đồ để xóa hình cũ khi vẽ lại
-
-// --- CHỨC NĂNG 1: VẼ BIỂU ĐỒ AHP ---
-async function xemTrongSoAHP() {
-    const matrixData = getAHPMatrixData(); 
-    
-    try {
-        const response = await fetch('/api/ahp_weights', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ahp_matrix: matrixData })
-        });
-        const data = await response.json();
-        
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-        
-        // Hiện khu vực biểu đồ
-        document.getElementById('chartArea').style.display = 'block';
-        document.getElementById('crValue').innerText = data.cr;
-        
-        // Vẽ biểu đồ Pie Chart
-        const ctx = document.getElementById('ahpPieChart').getContext('2d');
-        if (ahpChartInstance) ahpChartInstance.destroy();
-        
-        ahpChartInstance = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    data: data.weights,
-                    backgroundColor: ['#004a99', '#28a745', '#ffc107'],
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    } catch (error) {
-        alert("Lỗi kết nối đến máy chủ API.");
-    }
-}
-
-// --- CHỨC NĂNG 2: THẨM ĐỊNH TỔNG HỢP ---
 async function runAssessment() {
-    // Validate: Bắt buộc nhập dữ liệu tài chính
+    // 1. Lấy dữ liệu tài chính
     const term = document.getElementById('term').value;
     const no_emp = document.getElementById('no_emp').value;
     const gr_appv = document.getElementById('gr_appv').value;
@@ -193,7 +115,7 @@ async function runAssessment() {
     
     if(!term || !no_emp || !gr_appv || !disbursement) {
         alert("Vui lòng nhập đầy đủ các con số tài chính ở Bước 1!");
-        return; // Dừng lại không cho gửi lên máy chủ
+        return; 
     }
 
     const financialData = [
@@ -204,13 +126,17 @@ async function runAssessment() {
         parseInt(document.getElementById('real_estate').value)
     ];
 
-    const ahpMatrix = getAHPMatrixData();
-
-    const expertScores = [
-        parseFloat(document.getElementById('s1').value),
-        parseFloat(document.getElementById('s2').value),
-        parseFloat(document.getElementById('s3').value)
+    // 2. Lấy dữ liệu định tính từ Select Box
+    const qualitativeData = [
+        document.getElementById('uy_tin').value,
+        document.getElementById('kha_thi').value,
+        document.getElementById('founder').value
     ];
+
+    // Cập nhật trạng thái nút
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = 'Đang phân tích... <span class="spinner-border spinner-border-sm"></span>';
+    btn.disabled = true;
 
     try {
         const response = await fetch('/predict', {
@@ -218,19 +144,32 @@ async function runAssessment() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 financial_data: financialData,
-                ahp_matrix: ahpMatrix,
-                expert_scores: expertScores
+                qualitative_data: qualitativeData
             })
         });
 
         const result = await response.json();
-        if(result.error) alert(result.error);
-        else {
-            alert("ĐÃ LƯU HỒ SƠ VÀO CƠ SỞ DỮ LIỆU!\n\nKết quả: " + result.recommendation + "\nĐiểm tiềm năng AHP: " + result.score);
-            window.location.href = "/"; // Quay về trang chủ
+        
+        if(result.error) {
+            alert(result.error);
+        } else {
+            // Hiển thị kết quả Alert chi tiết
+            const msg = `PHÂN TÍCH HOÀN TẤT!\n` +
+                        `------------------------------------\n` +
+                        `🤖 Đánh giá của AI (Tài chính): ${result.ai_status}\n` +
+                        `🎯 Tổng điểm tiềm năng AHP: ${result.score}/100\n` +
+                        `⚖️ Quyết định của DSS: ${result.recommendation}\n` +
+                        `------------------------------------\n` +
+                        `Hồ sơ đã được lưu vào Cơ sở dữ liệu.`;
+            alert(msg);
+            window.location.href = "/"; // Về trang chủ xem Dashboard
         }
     } catch (error) {
         alert("Lỗi kết nối đến máy chủ API.");
+        console.error(error);
+    } finally {
+        btn.innerHTML = 'BẮT ĐẦU THẨM ĐỊNH HỆ THỐNG DSS';
+        btn.disabled = false;
     }
 }
 </script>

@@ -3,91 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Hệ thống DSS Thẩm định</title>
+    <title>Dashboard - Hệ thống DSS Startup</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        :root { --primary-blue: #004a99; --success-green: #28a745; --danger-red: #dc3545; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { background: var(--primary-blue); min-height: 100vh; color: white; padding-top: 20px; }
-        .stat-card { border: none; border-radius: 12px; transition: transform 0.2s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .table-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+        :root { --primary-color: #004a99; --secondary-color: #f8f9fa; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background-color: var(--primary-color); color: white; margin-bottom: 30px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { background-color: white; border-bottom: 2px solid var(--primary-color); font-weight: bold; }
+        .stat-box { padding: 20px; border-radius: 10px; color: white; text-align: center; }
+        .bg-approve { background-color: #28a745; }
+        .bg-reject { background-color: #dc3545; }
+        .bg-total { background-color: #007bff; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
+<nav class="navbar shadow-sm">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1 text-white">Quản trị hệ thống DSS Thẩm định</span>
+        <a href="/assessment" class="btn btn-warning fw-bold">➕ Thẩm định hồ sơ mới</a>
+    </div>
+</nav>
+
+<div class="container mb-5">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-box bg-total shadow">
+                <h5>Tổng hồ sơ</h5>
+                <h2 id="totalLoans">--</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box bg-approve shadow">
+                <h5>Đã duyệt</h5>
+                <h2 id="approvedLoans">--</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box bg-reject shadow">
+                <h5>Từ chối</h5>
+                <h2 id="rejectedLoans">--</h2>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
-        <div class="col-md-2 sidebar d-none d-md-block text-center">
-            <h5 class="mb-4">DSS STARTUP</h5>
-            <hr>
-            <ul class="nav flex-column gap-2">
-                <li class="nav-item"><a href="/" class="nav-link text-white active fw-bold">📊 Tổng quan</a></li>
-                <li class="nav-item"><a href="/assessment" class="nav-link text-white">📝 Thẩm định mới</a></li>
-                <li class="nav-item"><a href="#" class="nav-link text-white">📑 Báo cáo</a></li>
-            </ul>
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header text-primary">Danh sách hồ sơ đánh giá gần đây</div>
+                <div class="card-body">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã HS</th>
+                                <th>Mức độ (AI)</th>
+                                <th>Điểm AHP</th>
+                                <th>Quyết định DSS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentLoansTable">
+                            <tr><td colspan="4" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4>Bảng điều khiển hệ thống</h4>
-                <a href="/assessment" class="btn btn-primary px-4">+ Thẩm định hồ sơ mới</a>
+        <div class="col-md-5">
+    <div class="card h-100">
+        <div class="card-header text-danger">Cấu hình Ma trận AHP (Chuyên gia)</div>
+        <div class="card-body">
+            <p class="text-muted small">Nhập điểm so sánh (1-9) vào các ô màu trắng. Các ô màu xám sẽ tự động tính giá trị nghịch đảo.</p>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm text-center align-middle" style="font-size: 0.9rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tiêu chí</th>
+                            <th title="Sức khỏe tài chính">Tài chính</th>
+                            <th title="Uy tín tín dụng">Uy tín</th>
+                            <th title="Tính khả thi dự án">Khả thi</th>
+                            <th title="Năng lực Founder">Founder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th class="table-light text-start">Tài chính</th>
+                            <td class="bg-secondary text-white fw-bold">1</td>
+                            <td><input type="number" id="m12" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                            <td><input type="number" id="m13" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                            <td><input type="number" id="m14" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                        </tr>
+                        <tr>
+                            <th class="table-light text-start">Uy tín</th>
+                            <td id="m21" class="bg-light text-muted">1/3</td>
+                            <td class="bg-secondary text-white fw-bold">1</td>
+                            <td><input type="number" id="m23" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                            <td><input type="number" id="m24" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                        </tr>
+                        <tr>
+                            <th class="table-light text-start">Khả thi</th>
+                            <td id="m31" class="bg-light text-muted">1/5</td>
+                            <td id="m32" class="bg-light text-muted">1/3</td>
+                            <td class="bg-secondary text-white fw-bold">1</td>
+                            <td><input type="number" id="m34" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                        </tr>
+                        <tr>
+                            <th class="table-light text-start">Founder</th>
+                            <td id="m41" class="bg-light text-muted">1/5</td>
+                            <td id="m42" class="bg-light text-muted">1/5</td>
+                            <td id="m43" class="bg-light text-muted">1/3</td>
+                            <td class="bg-secondary text-white fw-bold">1</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+            <div class="mt-4">
+            <h6 class="text-center text-secondary border-bottom pb-2">Danh sách Trọng số Hệ thống</h6>
+            <table class="table table-sm table-borderless small mt-2">
+                <thead>
+                    <tr class="text-muted" style="font-size: 0.75rem;">
+                        <th>Tiêu chí</th>
+                        <th class="text-end">Trọng số</th>
+                        <th class="text-end">Tỷ lệ (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="weightList">
+                    </tbody>
+            </table>
+        </div>
+            <button class="btn btn-outline-danger w-100 fw-bold mb-3" onclick="xemTrongSoAHP()">
+                📊 Tính Trọng Số & Test CR
+            </button>
 
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card stat-card p-3 shadow-sm border-start border-primary border-4">
-                        <small class="text-muted">Tổng hồ sơ</small>
-                        <h2 id="txtTotal" class="fw-bold">0</h2>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stat-card p-3 shadow-sm border-start border-success border-4">
-                        <small class="text-muted">Đã duyệt (Approve)</small>
-                        <h2 id="txtApproved" class="fw-bold text-success">0</h2>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stat-card p-3 shadow-sm border-start border-danger border-4">
-                        <small class="text-muted">Từ chối (Reject)</small>
-                        <h2 id="txtRejected" class="fw-bold text-danger">0</h2>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stat-card p-3 shadow-sm border-start border-warning border-4">
-                        <small class="text-muted">Đang xem xét</small>
-                        <h2 id="txtPending" class="fw-bold text-warning">0</h2>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <div class="table-container text-center">
-                        <h6>Tỷ lệ duyệt vay</h6>
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="col-md-8 mb-4">
-                    <div class="table-container shadow-sm">
-                        <h6 class="mb-3">Hồ sơ thẩm định gần đây (Từ Database)</h6>
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr class="small text-muted">
-                                    <th>Startup</th>
-                                    <th>Điểm AHP</th>
-                                    <th>AI Status</th>
-                                    <th>Kết luận</th>
-                                </tr>
-                            </thead>
-                            <tbody id="loanTableBody">
-                                <tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div id="chartArea" style="display: none; margin-top: 15px;">
+                <h6 class="text-center text-primary mb-3">Tỷ số nhất quán: CR = <span id="crValue" class="fw-bold"></span></h6>
+                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                    <canvas id="ahpPieChart"></canvas>
                 </div>
             </div>
         </div>
@@ -95,67 +149,165 @@
 </div>
 
 <script>
-    let myChart = null; // Biến lưu biểu đồ
+// --- 1. LOAD DỮ LIỆU DASHBOARD KHI MỞ TRANG ---
+document.addEventListener("DOMContentLoaded", loadDashboardData);
 
-    // Hàm tự động chạy khi mở trang
-    window.onload = async function() {
-        try {
-            // 1. Gọi API lấy dữ liệu từ Python
-            const response = await fetch('/api/dashboard');
-            const data = await response.json();
-            
-            if (data.error) {
-                console.error("Lỗi:", data.error);
-                return;
-            }
-
-            // 2. Cập nhật 4 con số thống kê
-            document.getElementById('txtTotal').innerText = data.total;
-            document.getElementById('txtApproved').innerText = data.approved;
-            document.getElementById('txtRejected').innerText = data.rejected;
-            document.getElementById('txtPending').innerText = data.pending;
-
-            // 3. Cập nhật Biểu đồ tròn
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Duyệt', 'Từ chối', 'Xem xét'],
-                    datasets: [{
-                        data: [data.approved, data.rejected, data.pending],
-                        backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // 4. Cập nhật Bảng danh sách 5 hồ sơ mới nhất
-            const tbody = document.getElementById('loanTableBody');
-            tbody.innerHTML = ''; // Xóa chữ "Đang tải dữ liệu..."
-            
-            if (data.recent.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Chưa có hồ sơ nào trong Cơ sở dữ liệu</td></tr>';
-            } else {
-                data.recent.forEach(loan => {
-                    // Chỉnh màu chữ dựa trên kết quả
-                    let aiBadge = loan.ai_status === 'An toàn' ? '<span class="status-badge bg-success-subtle text-success">An toàn</span>' : '<span class="status-badge bg-danger-subtle text-danger">Rủi ro</span>';
-                    let recStyle = loan.recommendation === 'Duyệt vay' ? 'text-primary fw-bold' : (loan.recommendation.includes('Từ chối') ? 'text-danger fw-bold' : 'text-warning fw-bold');
-                    
-                    let row = `<tr>
-                        <td>${loan.startup}</td>
-                        <td>${loan.score}</td>
-                        <td>${aiBadge}</td>
-                        <td class="${recStyle}">${loan.recommendation}</td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-            }
-        } catch (error) {
-            console.error("Lỗi kết nối:", error);
-            document.getElementById('loanTableBody').innerHTML = '<tr><td colspan="4" class="text-center text-danger">Không thể kết nối đến Database</td></tr>';
+async function loadDashboardData() {
+    try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+        
+        if(data.error) {
+            console.error("Lỗi DB:", data.error);
+            return;
         }
+
+        // Cập nhật các ô số liệu
+        document.getElementById('totalLoans').innerText = data.total;
+        document.getElementById('approvedLoans').innerText = data.approved;
+        document.getElementById('rejectedLoans').innerText = data.rejected;
+
+        // Cập nhật bảng
+        const tbody = document.getElementById('recentLoansTable');
+        tbody.innerHTML = '';
+        if(data.recent && data.recent.length > 0) {
+            data.recent.forEach(row => {
+                let badgeClass = row.ai_status === 'An toàn' ? 'bg-success' : 'bg-danger';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${row.startup}</td>
+                        <td><span class="badge ${badgeClass}">${row.ai_status}</span></td>
+                        <td>${parseFloat(row.score).toFixed(2)}</td>
+                        <td>${row.recommendation}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Chưa có dữ liệu hồ sơ</td></tr>';
+        }
+    } catch (error) {
+        console.error("Lỗi fetch dashboard:", error);
+    }
+}
+
+// --- 2. HÀM VẼ BIỂU ĐỒ AHP (Mang từ trang assessment cũ sang) ---
+function getAHPMatrixData() {
+    const m12 = parseFloat(document.getElementById('m12').value);
+    const m13 = parseFloat(document.getElementById('m13').value);
+    const m14 = parseFloat(document.getElementById('m14').value);
+    const m23 = parseFloat(document.getElementById('m23').value);
+    const m24 = parseFloat(document.getElementById('m24').value);
+    const m34 = parseFloat(document.getElementById('m34').value);
+    
+    return [
+        [1, m12, m13, m14],
+        [1/m12, 1, m23, m24],
+        [1/m13, 1/m23, 1, m34],
+        [1/m14, 1/m24, 1/m34, 1]
+    ];
+}
+
+let ahpChartInstance = null;
+async function xemTrongSoAHP() {
+    const matrixData = getAHPMatrixData(); 
+    try {
+        const response = await fetch('/api/ahp_weights', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ahp_matrix: matrixData })
+        });
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        // 1. Hiển thị vùng chứa kết quả
+        document.getElementById('chartArea').style.display = 'block';
+        
+        // 2. Hiển thị giá trị CR và đổi màu nếu không đạt
+        const crSpan = document.getElementById('crValue');
+        crSpan.innerText = data.cr;
+        crSpan.style.color = data.cr > 0.1 ? 'red' : 'green';
+
+        // --- PHẦN THÊM MỚI: ĐỔ DỮ LIỆU VÀO DANH SÁCH TRỌNG SỐ ---
+        const weightList = document.getElementById('weightList');
+        weightList.innerHTML = ''; // Xóa trắng danh sách cũ
+
+        // data.weights thường là mảng các số đã nhân 100 (ví dụ: [53.78, 27.45...])
+        data.labels.forEach((label, i) => {
+            const valPercent = data.weights[i]; // Giá trị %
+            const valDecimal = (valPercent / 100).toFixed(4); // Giá trị thập phân
+
+            weightList.innerHTML += `
+                <tr class="border-bottom">
+                    <td class="py-2">${label}</td>
+                    <td class="text-end py-2 text-muted">${valDecimal}</td>
+                    <td class="text-end py-2 fw-bold text-primary">${valPercent}%</td>
+                </tr>
+            `;
+        });
+        // -------------------------------------------------------
+        
+        // 3. Vẽ biểu đồ Pie Chart
+        const ctx = document.getElementById('ahpPieChart').getContext('2d');
+        if (ahpChartInstance) ahpChartInstance.destroy();
+        
+        ahpChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.weights,
+                    backgroundColor: ['#004a99', '#28a745', '#ffc107', '#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { font: { size: 11 } } 
+                    } 
+                }
+            }
+        });
+    } catch (error) {
+        alert("Lỗi kết nối đến API vẽ biểu đồ.");
+    }
+
+
+}
+// --- HÀM TỰ ĐỘNG CẬP NHẬT CÁC Ô NGHỊCH ĐẢO ---
+function updateInverse() {
+    const formatFraction = (val) => {
+        val = parseFloat(val);
+        if (!val || val === 0) return "-";
+        // Nếu nhập số nguyên, hiển thị dạng phân số 1/x cho đẹp
+        if (Number.isInteger(val)) return "1/" + val;
+        // Nếu nhập số thập phân, tính ra số thập phân rút gọn
+        return (1 / val).toFixed(2); 
     };
+
+    document.getElementById('m21').innerText = formatFraction(document.getElementById('m12').value);
+    document.getElementById('m31').innerText = formatFraction(document.getElementById('m13').value);
+    document.getElementById('m41').innerText = formatFraction(document.getElementById('m14').value);
+    
+    document.getElementById('m32').innerText = formatFraction(document.getElementById('m23').value);
+    document.getElementById('m42').innerText = formatFraction(document.getElementById('m24').value);
+    
+    document.getElementById('m43').innerText = formatFraction(document.getElementById('m34').value);
+}
+
+// Gọi hàm này 1 lần khi trang vừa load xong để khởi tạo hiển thị ban đầu
+document.addEventListener("DOMContentLoaded", () => {
+    updateInverse();
+    loadDashboardData(); // (Hàm cũ giữ nguyên)
+});
 </script>
+
 </body>
 </html>

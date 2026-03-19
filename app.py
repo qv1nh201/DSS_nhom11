@@ -71,9 +71,14 @@ def index():
 def assessment():
     return render_template('assessment.html')
 
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
 @app.route('/history')
 def history():
     return render_template('history.html')
+
 
 # ==========================================
 # 3. CÁC API XỬ LÝ DỮ LIỆU
@@ -82,8 +87,12 @@ def history():
 @app.route('/api/ahp_weights', methods=['GET', 'POST'])
 def api_ahp_weights():
     global CRITERIA_WEIGHTS
+    LABELS = ["Sức khỏe tài chính", "Uy tín tín dụng", "Tính khả thi dự án", "Năng lực Founder"]
+    
     if request.method == 'GET':
-        return jsonify(load_ahp_config())
+        config = load_ahp_config()
+        config["labels"] = LABELS
+        return jsonify(config)
     
     try:
         data = request.json
@@ -94,13 +103,26 @@ def api_ahp_weights():
             return jsonify({"error": f"CR={round(cr,4)} > 0.1"}), 400
 
         CRITERIA_WEIGHTS = weights
+        
+        # Lấy 6 giá trị nhập vào để lưu lại
+        inputs = {
+            "m12": matrix[0][1], "m13": matrix[0][2], "m14": matrix[0][3],
+            "m23": matrix[1][2], "m24": matrix[1][3], "m34": matrix[2][3]
+        }
+        
+        # Lưu cả weights, labels và các con số inputs vào file
         with open(CONFIG_FILE, 'w') as f:
-            json.dump({"weights": weights.tolist()}, f)
+            json.dump({
+                "weights": weights.tolist(),
+                "labels": LABELS,
+                "inputs": inputs,
+                "cr": cr
+            }, f)
 
         return jsonify({
             "weights": [round(w * 100, 2) for w in weights],
             "cr": round(cr, 4),
-            "labels": ahp_data["labels"]
+            "labels": LABELS
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

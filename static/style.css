@@ -1,0 +1,230 @@
+/* ==========================================================================
+   TẬP LỆNH CSS "VÔ ĐỐI" - DÀNH CHO HỆ THỐNG DSS FINTECH
+   ========================================================================== */
+
+/* 1. IMPORT FONT CHỮ CỦA TƯƠNG LAI (Plus Jakarta Sans) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* 2. KHAI BÁO BIẾN MÀU SẮC "THẦN THÁNH" */
+:root {
+    --bg-main: #f3f5f9; /* Xám ngọc trai */
+    --primary-gradient: linear-gradient(135deg, #0061ff 0%, #60efff 100%);
+    --success-gradient: linear-gradient(135deg, #059669 0%, #34d399 100%);
+    --danger-gradient: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
+    --shadow-hover: 0 20px 50px -10px rgba(0, 100, 255, 0.15);
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-main);
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(96, 239, 255, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 97, 255, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+    padding-bottom: 2rem;
+}
+
+/* 3. NAVBAR BỒNG BỀNH (FLOATING GLASS NAVBAR) */
+.navbar {
+    background: var(--primary-gradient) !important;
+    margin: 15px auto 30px auto;
+    width: 96%;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 97, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
+}
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 4. HIỆU ỨNG THẺ (CARD) KÍNH MỜ SIÊU CẤP */
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+.card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: var(--shadow-hover);
+    border: 1px solid rgba(0, 97, 255, 0.2);
+}
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #0f172a;
+}
+
+/* 5. NÚT BẤM CÓ LINH HỒN (ANIMATED BUTTONS) */
+.btn {
+    border-radius: 12px;
+    font-weight: 700;
+    padding: 10px 20px;
+    letter-spacing: 0.02em;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+.btn::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+.btn:hover::before { opacity: 1; }
+.btn:hover { transform: translateY(-3px); }
+
+.btn-primary { background: var(--primary-gradient); box-shadow: 0 8px 20px rgba(0, 97, 255, 0.3); color: white;}
+.btn-danger { background: var(--danger-gradient); box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3); color: white;}
+.btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); color: #000;}
+
+/* 6. BẢNG DỮ LIỆU ĐẲNG CẤP APPLE */
+.table { margin-bottom: 0; }
+.table th {
+    background-color: transparent !important;
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding: 1rem 1.5rem;
+}
+.table td {
+    padding: 1.2rem 1.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    color: #334155;
+    font-weight: 500;
+}
+.table tbody tr { transition: background-color 0.2s ease, transform 0.2s ease; }
+.table tbody tr:hover {
+    background-color: rgba(0, 97, 255, 0.02);
+    transform: scale(1.005);
+}
+
+/* 7. Ô THỐNG KÊ (STAT BOX) PHÁT SÁNG */
+.stat-box {
+    padding: 2rem;
+    border-radius: 24px;
+    color: white;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.4s ease;
+}
+.stat-box:hover {
+    transform: translateY(-8px);
+    filter: brightness(1.1);
+}
+.bg-total { background: var(--primary-gradient); box-shadow: 0 15px 35px rgba(0, 97, 255, 0.3); }
+.bg-approve { background: var(--success-gradient); box-shadow: 0 15px 35px rgba(5, 150, 105, 0.3); }
+.bg-reject { background: var(--danger-gradient); box-shadow: 0 15px 35px rgba(225, 29, 72, 0.3); }
+.stat-box h6 { font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; }
+.stat-box h2 { font-weight: 800; font-size: 3.5rem; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+/* 8. BADGE (NHÃN) PASTEL CỰC MỊN */
+.badge {
+    padding: 0.6em 1em;
+    border-radius: 8px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+}
+.bg-success { background-color: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbf7d0; }
+.bg-danger { background-color: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fecaca; }
+
+/* 9. INPUT FORM NHẬP MA TRẬN */
+.form-control {
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    padding: 0.6rem 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    transition: all 0.3s ease;
+    background-color: rgba(255,255,255,0.5);
+}
+.form-control:focus {
+    border-color: #0061ff;
+    box-shadow: 0 0 0 4px rgba(0, 97, 255, 0.15);
+    background-color: #ffffff;
+    transform: scale(1.05);
+}
+
+/* 10. TÙY CHỈNH THANH CUỘN (SCROLLBAR) NGUYÊN WEB */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* ==========================================================================
+   FIX LỖI HIỂN THỊ SỐ TRÊN MA TRẬN AHP
+   ========================================================================== */
+
+/* 1. Sửa các ô số 1 (Đường chéo ma trận) - Ép nền tối, chữ trắng */
+.table td.bg-secondary {
+    background-color: #0f172a !important; /* Xanh đen cực đậm */
+    color: #ffffff !important;            /* Chữ trắng tinh */
+    font-size: 1.1rem;
+}
+
+/* 2. Sửa các ô số nghịch đảo (1/3, 1/5...) - Nền xanh nhạt, chữ đậm */
+.table td.bg-light {
+    background-color: rgba(0, 97, 255, 0.08) !important;
+    color: #0f172a !important;            /* Chữ xanh đen đậm */
+    font-weight: 700 !important;
+}
+
+/* 3. Sửa ô Input nhập số - Ép nền trắng, chữ đen đậm */
+.form-control {
+    background-color: #ffffff !important; 
+    color: #0f172a !important;            
+    font-weight: 800 !important;          
+    border: 2px solid #cbd5e1 !important; 
+}
+
+/* 4. Fix màu chữ hiển thị số liệu thống kê (phòng trường hợp bị lóa) */
+.stat-box h2 {
+    color: #ffffff !important;
+}
+/* ==========================================================================
+   GỌI LẠI NÚT TĂNG GIẢM SỐ (SPINNER BUTTONS)
+   ========================================================================== */
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: inner-spin-button !important;
+    display: block !important;
+    opacity: 0.7 !important; /* Làm mờ đi một chút cho sang, trỏ chuột vào sẽ rõ */
+    cursor: pointer;
+    height: 30px; /* Cân đối với chiều cao của form-control */
+}
+
+/* Khi đưa chuột vào thì nút hiện rõ lên */
+input[type=number]::-webkit-inner-spin-button:hover {
+    opacity: 1 !important;
+}
+
+/* Đẩy nhẹ chữ số sang trái một chút để không bị nút đè lên */
+input[type=number] {
+    padding-right: 2px !important; 
+}

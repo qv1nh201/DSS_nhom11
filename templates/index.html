@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Hệ thống DSS Startup</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/zephyr/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         :root { --primary-color: #004a99; --secondary-color: #f8f9fa; }
         body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -24,7 +25,10 @@
     <div class="container">
         <span class="navbar-brand mb-0 h1 text-white">Quản trị hệ thống DSS Thẩm định</span>
         <a href="/assessment" class="btn btn-warning fw-bold">➕ Thẩm định hồ sơ mới</a>
-        <a href="/history" class="btn btn-outline-light ms-2">📁 Quản lý lịch sử hồ sơ</a>
+        
+        <a href="/settings" class="btn btn-warning fw-bold"> ⚙️ Cấu Hình AHP</a>
+        
+        <a href="/history" class="btn btn-warning fw-bold">📁 Quản lý lịch sử hồ sơ</a>
     </div>
 </nav>
 
@@ -51,7 +55,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-7">
+        <div class="col-12">
             <div class="card h-100">
                 <div class="card-header text-primary">Danh sách hồ sơ đánh giá gần đây</div>
                 <div class="card-body">
@@ -73,80 +77,6 @@
         </div>
 
         <div class="col-md-5">
-    <div class="card h-100">
-        <div class="card-header text-danger">Cấu hình Ma trận AHP (Chuyên gia)</div>
-        <div class="card-body">
-            <p class="text-muted small">Nhập điểm so sánh (1-9) vào các ô màu trắng. Các ô màu xám sẽ tự động tính giá trị nghịch đảo.</p>
-            
-            <div class="table-responsive">
-                <table class="table table-bordered table-sm text-center align-middle" style="font-size: 0.9rem;">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tiêu chí</th>
-                            <th title="Sức khỏe tài chính">Tài chính</th>
-                            <th title="Uy tín tín dụng">Uy tín</th>
-                            <th title="Tính khả thi dự án">Khả thi</th>
-                            <th title="Năng lực Founder">Founder</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <th class="table-light text-start">Tài chính</th>
-                            <td class="bg-secondary text-white fw-bold">1</td>
-                            <td><input type="number" id="m12" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                            <td><input type="number" id="m13" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                            <td><input type="number" id="m14" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                        </tr>
-                        <tr>
-                            <th class="table-light text-start">Uy tín</th>
-                            <td id="m21" class="bg-light text-muted">1/3</td>
-                            <td class="bg-secondary text-white fw-bold">1</td>
-                            <td><input type="number" id="m23" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                            <td><input type="number" id="m24" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                        </tr>
-                        <tr>
-                            <th class="table-light text-start">Khả thi</th>
-                            <td id="m31" class="bg-light text-muted">1/5</td>
-                            <td id="m32" class="bg-light text-muted">1/3</td>
-                            <td class="bg-secondary text-white fw-bold">1</td>
-                            <td><input type="number" id="m34" class="form-control form-control-sm text-center mx-auto" style="width: 50px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
-                        </tr>
-                        <tr>
-                            <th class="table-light text-start">Founder</th>
-                            <td id="m41" class="bg-light text-muted">1/5</td>
-                            <td id="m42" class="bg-light text-muted">1/5</td>
-                            <td id="m43" class="bg-light text-muted">1/3</td>
-                            <td class="bg-secondary text-white fw-bold">1</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-4">
-            <h6 class="text-center text-secondary border-bottom pb-2">Danh sách Trọng số Hệ thống</h6>
-            <table class="table table-sm table-borderless small mt-2">
-                <thead>
-                    <tr class="text-muted" style="font-size: 0.75rem;">
-                        <th>Tiêu chí</th>
-                        <th class="text-end">Trọng số</th>
-                        <th class="text-end">Tỷ lệ (%)</th>
-                    </tr>
-                </thead>
-                <tbody id="weightList">
-                    </tbody>
-            </table>
-        </div>
-            <button class="btn btn-outline-danger w-100 fw-bold mb-3" onclick="xemTrongSoAHP()">
-                📊 Tính Trọng Số & Test CR
-            </button>
-
-            <div id="chartArea" style="display: none; margin-top: 15px;">
-                <h6 class="text-center text-primary mb-3">Tỷ số nhất quán: CR = <span id="crValue" class="fw-bold"></span></h6>
-                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
-                    <canvas id="ahpPieChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>

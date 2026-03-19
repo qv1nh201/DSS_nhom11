@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu hình Hệ thống - DSS Startup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar navbar-dark p-3">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1 text-white">⚙️ Cấu hình Hệ thống (AHP Settings)</span>
+        <div>
+            <a href="/" class="btn btn-outline-light">🏠 Về Dashboard</a>
+            <a href="/assessment" class="btn btn-warning fw-bold text-dark ms-2">➕ Thẩm định mới</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mb-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert glass-card border-0 text-dark" style="background: rgba(0, 97, 255, 0.08);">
+                <strong class="text-primary"><i class="bi bi-shield-lock"></i> Khu vực Quản trị rủi ro:</strong> Việc thay đổi ma trận AHP dưới đây sẽ cập nhật trực tiếp "Khẩu vị rủi ro" của toàn bộ hệ thống thẩm định mới. Vui lòng kiểm tra kỹ tỷ số nhất quán (CR) trước khi lưu.
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card glass-card h-100">
+                <div class="card-header text-primary">📊 Thiết lập Ma trận cặp (Pairwise Comparison)</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm text-center align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tiêu chí</th>
+                                    <th>Tài chính (TC)</th>
+                                    <th>Uy tín (UT)</th>
+                                    <th>Khả thi (KT)</th>
+                                    <th>Founder (FD)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th class="table-light text-start text-dark">Tài chính (TC)</th>
+                                    <td class="text-white fw-bold" style="background: var(--primary-gradient);">1</td>
+                                    <td><input type="number" id="m12" class="form-control text-center mx-auto" style="width: 60px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                    <td><input type="number" id="m13" class="form-control text-center mx-auto" style="width: 60px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                    <td><input type="number" id="m14" class="form-control text-center mx-auto" style="width: 60px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                </tr>
+                                <tr>
+                                    <th class="table-light text-start text-dark">Uy tín (UT)</th>
+                                    <td id="m21" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/3</td>
+                                    <td class="text-white fw-bold" style="background: var(--primary-gradient);">1</td>
+                                    <td><input type="number" id="m23" class="form-control text-center mx-auto" style="width: 60px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                    <td><input type="number" id="m24" class="form-control text-center mx-auto" style="width: 60px;" value="5" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                </tr>
+                                <tr>
+                                    <th class="table-light text-start text-dark">Khả thi (KT)</th>
+                                    <td id="m31" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/5</td>
+                                    <td id="m32" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/3</td>
+                                    <td class="text-white fw-bold" style="background: var(--primary-gradient);">1</td>
+                                    <td><input type="number" id="m34" class="form-control text-center mx-auto" style="width: 60px;" value="3" min="0.1" max="9" step="any" oninput="updateInverse()"></td>
+                                </tr>
+                                <tr>
+                                    <th class="table-light text-start text-dark">Founder (FD)</th>
+                                    <td id="m41" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/5</td>
+                                    <td id="m42" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/5</td>
+                                    <td id="m43" class="text-primary fw-bold" style="background: rgba(0,97,255,0.05);">1/3</td>
+                                    <td class="text-white fw-bold" style="background: var(--primary-gradient);">1</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100 mt-4 py-2 text-uppercase fs-6" onclick="xemTrongSoAHP()">
+                        <i class="bi bi-calculator"></i> Tính Toán & Lưu Trọng Số Mới
+                    </button>
+
+                    <div class="mt-4 p-3 rounded glass-card">
+                        <h6 class="fw-bold text-primary mb-2">💡 Hướng dẫn thang đo Saaty (1-9):</h6>
+                        <div class="row small text-dark">
+                            <div class="col-6">
+                                <b>1:</b> Bằng nhau <br>
+                                <b>3:</b> Hơi quan trọng <br>
+                                <b>5:</b> Quan trọng hơn
+                            </div>
+                            <div class="col-6">
+                                <b>7:</b> Rất quan trọng <br>
+                                <b>9:</b> Tuyệt đối quan trọng <br>
+                                <i class="text-muted">2,4,6,8: Mức trung gian</i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card glass-card h-100" id="chartArea" style="display: none;">
+                <div class="card-header text-success">🎯 Kết quả Phân tích AHP</div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="text-center text-muted border-bottom border-light pb-2">Danh sách Trọng số Hệ thống</h6>
+                    <table class="table table-sm table-borderless text-dark mt-2">
+                        <tbody id="weightList"></tbody>
+                    </table>
+                    
+                    <div class="text-center my-3 p-3 rounded glass-card" style="background: rgba(0, 97, 255, 0.05);">
+                        <h6 class="mb-0 text-dark">Tỷ số nhất quán: CR = <span id="crValue" class="fw-bold fs-5"></span></h6>
+                        <small class="text-muted">(CR < 0.1 là hợp lệ)</small>
+                    </div>
+                    
+                    <div style="flex-grow: 1; min-height: 250px; position: relative;">
+                        <canvas id="ahpPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card glass-card h-100 d-flex justify-content-center align-items-center" id="emptyState">
+                <div class="text-center text-muted p-4">
+                    <h1 style="font-size: 3rem;">📊</h1>
+                    <p class="mt-3">Nhập số liệu ma trận bên trái và bấm <br><b class="text-primary">"Tính Toán"</b> để xem kết quả.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Logic tính nghịch đảo
+function updateInverse() {
+    const format = (id) => {
+        let val = parseFloat(document.getElementById(id).value) || 1;
+        return Number.isInteger(val) ? `1/${val}` : (1/val).toFixed(2);
+    };
+    document.getElementById('m21').innerText = format('m12');
+    document.getElementById('m31').innerText = format('m13');
+    document.getElementById('m41').innerText = format('m14');
+    document.getElementById('m32').innerText = format('m23');
+    document.getElementById('m42').innerText = format('m24');
+    document.getElementById('m43').innerText = format('m34');
+}
+
+// Logic lấy dữ liệu
+function getAHPMatrixData() {
+    const m = (id) => parseFloat(document.getElementById(id).value) || 1;
+    const m12=m('m12'), m13=m('m13'), m14=m('m14'), m23=m('m23'), m24=m('m24'), m34=m('m34');
+    return [[1, m12, m13, m14],[1/m12, 1, m23, m24],[1/m13, 1/m23, 1, m34],[1/m14, 1/m24, 1/m34, 1]];
+}
+
+let ahpChartInstance = null;
+
+// Logic Gọi API tính AHP
+async function xemTrongSoAHP() {
+    try {
+        const response = await fetch('/api/ahp_weights', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ahp_matrix: getAHPMatrixData() })
+        });
+        const data = await response.json();
+        if (data.error) { alert("Lỗi dữ liệu: " + data.error); return; }
+
+        // Đổi trạng thái hiển thị
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('chartArea').style.display = 'block';
+
+        // Đổ dữ liệu CR
+        const crSpan = document.getElementById('crValue');
+        crSpan.innerText = data.cr;
+        crSpan.style.color = data.cr <= 0.1 ? '#059669' : '#e11d48'; // Xanh đậm hoặc Đỏ đậm
+
+        // Đổ danh sách trọng số
+        const weightList = document.getElementById('weightList');
+        weightList.innerHTML = '';
+        data.labels.forEach((label, i) => {
+            weightList.innerHTML += `
+                <tr class="border-bottom border-light">
+                    <td class="py-2 fw-medium">${label}</td>
+                    <td class="text-end py-2 fw-bold text-primary">${data.weights[i]}%</td>
+                </tr>`;
+        });
+
+        // Vẽ biểu đồ
+        const ctx = document.getElementById('ahpPieChart').getContext('2d');
+        if (ahpChartInstance) ahpChartInstance.destroy();
+        
+        Chart.defaults.color = '#1e293b'; // Chữ trên biểu đồ màu đen/slate nhạt
+        ahpChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.weights,
+                    backgroundColor: ['#0061ff', '#34d399', '#f59e0b', '#fb7185'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'bottom', labels: { padding: 20, font: {family: 'Plus Jakarta Sans', weight: 'bold'} } }
+                }
+            }
+        });
+    } catch (e) { alert("Lỗi kết nối API tới server Flask."); }
+}
+
+// Chạy tự động tính nghịch đảo khi vừa load web
+// Hàm tự động gọi dữ liệu cũ khi mở trang
+async function loadLatestAHP() {
+    try {
+        const response = await fetch('/api/ahp_weights');
+        const data = await response.json();
+        
+        // Nếu đã từng lưu dữ liệu thì lấy số cũ đắp vào ô input
+        if (data.inputs) {
+            document.getElementById('m12').value = data.inputs.m12;
+            document.getElementById('m13').value = data.inputs.m13;
+            document.getElementById('m14').value = data.inputs.m14;
+            document.getElementById('m23').value = data.inputs.m23;
+            document.getElementById('m24').value = data.inputs.m24;
+            document.getElementById('m34').value = data.inputs.m34;
+            
+            // Cập nhật các ô nghịch đảo
+            updateInverse();
+            
+            // Tự động bấm nút "Tính Toán" luôn để hiện sẵn biểu đồ cho sếp xem
+            xemTrongSoAHP(); 
+        } else {
+            // Nếu chưa có file lưu, dùng số mặc định
+            updateInverse();
+        }
+    } catch (e) {
+        console.error("Lỗi tải cấu hình AHP:", e);
+        updateInverse();
+    }
+}
+
+// Thay thế dòng DOMContentLoaded cũ bằng dòng này:
+document.addEventListener("DOMContentLoaded", loadLatestAHP);
+</script>
+</body>
+</html>

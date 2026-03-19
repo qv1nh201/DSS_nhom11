@@ -3,63 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <title>Lịch sử thẩm định - DSS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/zephyr/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-primary mb-4">
+    
+    <nav class="navbar navbar-dark p-3">
         <div class="container">
-            <span class="navbar-brand fw-bold">Quản lý hồ sơ thẩm định chi tiết</span>
-            <a href="/" class="btn btn-outline-light btn-sm">Quay lại Dashboard</a>
+            <span class="navbar-brand mb-0 h1 text-white">📁 Quản lý hồ sơ thẩm định chi tiết</span>
+            <div>
+                <a href="/" class="btn btn-outline-light">🏠 Về Dashboard</a>
+                <a href="/assessment" class="btn btn-warning fw-bold text-dark ms-2">➕ Thẩm định mới</a>
+                <a href="/settings" class="btn btn-info fw-bold text-dark ms-2">⚙️ Cấu Hình AHP</a>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="card shadow border-0">
+    <div class="container mb-5">
+        <div class="card glass-card h-100">
             <div class="card-body">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Mã HS</th>
-                            <th>Dữ liệu tài chính (Term/Vốn)</th>
-                            <th>AI Dự báo</th>
-                            <th>Điểm AHP</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Startup/Dự án</th>
+                                <th>Vốn đầu tư</th>
+                                <th>Dự báo (AI)</th>
+                                <th>Điểm (AHP)</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <tr><td colspan="5" class="text-center text-muted">Đang tải dữ liệu...</td></tr>
                         </tbody>
-                </table>
-                <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Chi tiết hồ sơ thẩm định</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="modalContent">
+                    </table>
                 </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" id="btnExportInside">Xuất PDF ngay</button>
-            </div>
-        </div>
-    </div>
-</div>
             </div>
         </div>
     </div>
 
-    <div id="pdf-template" style="display:none; padding: 50px; font-family: 'Times New Roman', serif; background-color: white;">
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title fw-bold text-white">
+                        <span id="histStartupName">Hồ sơ Startup</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-white-50">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><small>Dự báo Rủi ro (AI):</small></p>
+                            <h5 id="histAiStatus">--</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><small>Điểm Tiềm năng (AHP):</small></p>
+                            <h5 id="histAhpScore" class="text-info fw-bold">--/100</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 rounded mb-3" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);">
+                        <h6 class="text-white mb-2">📊 Thông số đầu vào:</h6>
+                        <div class="row small">
+                            <div class="col-6">
+                                <li>Kỳ hạn vay: <b id="histTerm" class="text-white"></b> tháng</li>
+                                <li>Số nhân sự: <b id="histEmp" class="text-white"></b> người</li>
+                            </div>
+                            <div class="col-6">
+                                <li>Vốn đề nghị: $<b id="histAppv" class="text-white"></b></li>
+                                <li>Thế chấp BĐS: <b id="histRealEstate" class="text-white"></b></li>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded" style="background: rgba(14, 165, 233, 0.1); border-left: 4px solid #0ea5e9;">
+                        <h6 class="text-primary fw-bold mb-1">💡 Giải trình Hệ thống (XAI):</h6>
+                        <p id="histExplanation" class="mb-0 small" style="font-style: italic; color: #cbd5e1;"></p>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <h6 class="me-auto text-white">Quyết định: <span id="histRec" class="fw-bold text-warning text-uppercase"></span></h6>
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-info fw-bold" id="btnExportInsideModal">📄 Xuất PDF Báo cáo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-template" style="display:none; padding: 50px; font-family: 'Times New Roman', serif; background-color: white; color: black;">
         <div style="text-align: center;">
             <h4 style="margin-bottom: 5px; font-weight: bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h4>
             <p style="text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</p>
             <br>
             <h2 style="color: #004a99; font-weight: bold;">BÁO CÁO KẾT QUẢ THẨM ĐỊNH TÍN DỤNG</h2>
         </div>
-        
         <hr style="border: 1px solid black;">
-        
         <div style="margin-top: 20px; line-height: 1.8; font-size: 14pt;">
             <p><strong>Mã hồ sơ:</strong> <span id="pdf-id"></span></p>
             <p><strong>Dự báo rủi ro (AI):</strong> <span id="pdf-ai"></span></p>
@@ -71,7 +113,6 @@
                 <p id="pdf-explanation" style="font-style: italic; color: #555; font-size: 12pt;"></p>
             </div>
         </div>
-
         <div style="margin-top: 50px; text-align: right;">
             <p><em>Ngày.... tháng.... năm 2026</em></p>
             <p style="margin-right: 40px; font-weight: bold;">Cán bộ thẩm định</p>
@@ -81,25 +122,75 @@
     </div>
 
     <script>
+        let allLoansData = []; // Lưu trữ để gọi popup siêu tốc
+
+        // Hàm tải dữ liệu vào bảng (Đã bọc thép chống lỗi Null)
         async function loadHistory() {
-            const res = await fetch('/api/history');
-            const loans = await res.json();
-            const tbody = document.getElementById('historyBody');
-            
-            tbody.innerHTML = loans.map(loan => `
-                <tr>
-                    <td><b>#${loan.ID}</b></td>
-                    <td>Tháng: ${loan.Term} | Vốn: $${loan.GrAppv}</td>
-                    <td><span class="badge ${loan.AI_Status === 'An toàn' ? 'bg-success' : 'bg-danger'}">${loan.AI_Status}</span></td>
-                    <td class="text-primary fw-bold">${loan.AHP_Score.toFixed(2)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info" onclick='showPDF(${JSON.stringify(loan)})'>Xuất PDF</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteLoan(${loan.ID})">Xóa</button>
-                    </td>
-                </tr>
-            `).join('');
+            try {
+                const res = await fetch('/api/history');
+                allLoansData = await res.json();
+                const tbody = document.getElementById('historyBody');
+                
+                tbody.innerHTML = allLoansData.map(loan => {
+                    let badgeClass = loan.AI_Status === 'An toàn' ? 'bg-success' : 'bg-danger';
+                    let startupName = loan.StartupName || `Startup #${loan.ID}`;
+                    
+                    // Xử lý an toàn cho các con số (Nếu null thì mặc định là 0)
+                    let safeAppv = (loan.GrAppv || 0).toLocaleString();
+                    let safeScore = (loan.AHP_Score || 0).toFixed(2);
+
+                    return `
+                    <tr>
+                        <td class="fw-bold text-dark">${startupName}</td>
+                        <td><b class="text-primary">$${safeAppv}</b></td>
+                        <td><span class="badge ${badgeClass}">${loan.AI_Status}</span></td>
+                        <td class="text-info fw-bold">${safeScore}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-primary" onclick="viewHistoryDetails(${loan.ID})">👁️ Xem</button>
+                            <button class="btn btn-sm btn-outline-info mx-1" onclick='showPDF(${JSON.stringify(loan)})'>📄 PDF</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteLoan(${loan.ID})">❌ Xóa</button>
+                        </td>
+                    </tr>
+                `}).join('');
+            } catch (e) {
+                console.error("Lỗi tải lịch sử:", e);
+            }
         }
 
+        // Hàm mở Popup Xem Nhanh (Đã bọc thép)
+        function viewHistoryDetails(id) {
+            const loan = allLoansData.find(l => l.ID == id);
+            if(loan) {
+                document.getElementById('histStartupName').innerText = loan.StartupName || `Startup Dự án #${loan.ID}`;
+                
+                const aiBadge = document.getElementById('histAiStatus');
+                aiBadge.innerText = loan.AI_Status || "Chưa có dữ liệu";
+                aiBadge.className = loan.AI_Status === 'An toàn' ? 'badge bg-success' : 'badge bg-danger';
+                
+                document.getElementById('histAhpScore').innerText = (loan.AHP_Score || 0).toFixed(2) + " / 100";
+                document.getElementById('histTerm').innerText = loan.Term || "0";
+                document.getElementById('histEmp').innerText = loan.NoEmp || "0";
+                
+                // Xử lý an toàn cho vốn
+                document.getElementById('histAppv').innerText = (loan.GrAppv || 0).toLocaleString();
+                document.getElementById('histRealEstate').innerText = loan.RealEstate == 1 ? "Có" : "Không";
+                
+                document.getElementById('histExplanation').innerText = loan.Explanation || "Chưa có giải trình.";
+                document.getElementById('histRec').innerText = loan.Recommendation || "Đang chờ...";
+
+                document.getElementById('btnExportInsideModal').onclick = function() {
+                    showPDF(loan);
+                    var modalEl = document.getElementById('historyModal');
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                };
+
+                var myModal = new bootstrap.Modal(document.getElementById('historyModal'));
+                myModal.show();
+            }
+        }
+
+        // Hàm Xóa hồ sơ
         async function deleteLoan(id) {
             if(confirm('Bạn có chắc chắn muốn xóa hồ sơ này khỏi hệ thống?')) {
                 const res = await fetch(`/api/delete_loan/${id}`, { method: 'DELETE' });
@@ -107,18 +198,16 @@
             }
         }
 
+        // Hàm Xuất PDF
         function showPDF(loan) {
-            // Điền thông tin vào mẫu PDF
             document.getElementById('pdf-id').innerText = loan.ID;
             document.getElementById('pdf-ai').innerText = loan.AI_Status;
-            document.getElementById('pdf-score').innerText = loan.AHP_Score.toFixed(2);
+            document.getElementById('pdf-score').innerText = (loan.AHP_Score || 0).toFixed(2);
             document.getElementById('pdf-rec').innerText = loan.Recommendation;
-            
-            // Lấy dữ liệu giải trình từ DB, nếu trống thì hiện câu mặc định
             document.getElementById('pdf-explanation').innerText = loan.Explanation || "Chưa có dữ liệu giải trình cho hồ sơ này.";
 
             const element = document.getElementById('pdf-template');
-            element.style.display = 'block';
+            element.style.display = 'block'; // Hiện lên để chụp ảnh
             
             const opt = {
                 margin: 0.5,
@@ -129,10 +218,11 @@
             };
             
             html2pdf().set(opt).from(element).save().then(() => {
-                element.style.display = 'none';
+                element.style.display = 'none'; // Chụp xong giấu đi
             });
         }
 
+        // Tự động chạy khi vô trang
         document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
